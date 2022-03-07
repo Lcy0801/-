@@ -1,0 +1,65 @@
+{
+  "id": "2161741",
+  "name": "navicon",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "17984171",
+      "name": "关  闭",
+      "font_class": "guanbi",
+      "unicode": "e6c9",
+      "unicode_decimal": 59081
+    },
+    {
+      "icon_id": "1713948",
+      "name": "40-右浮动",
+      "font_class": "-youfudong",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "14156262",
+      "name": "最小化",
+      "font_class": "64",
+      "unicode": "e6b6",
+      "unicode_decimal": 59062
+    },
+    {
+      "icon_id": "12978136",
+      "name": "重置",
+      "font_class": "zhongzhi",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "1546611",
+      "name": "暂停",
+      "font_class": "zanting",
+      "unicode": "e69d",
+      "unicode_decimal": 59037
+    },
+    {
+      "icon_id": "1881568",
+      "name": "分析",
+      "font_class": "fenxi",
+      "unicode": "e668",
+      "unicode_decimal": 58984
+    },
+    {
+      "icon_id": "5334216",
+      "name": "预警",
+      "font_class": "yujing",
+      "unicode": "e634",
+      "unicode_decimal": 58932
+    },
+    {
+      "icon_id": "10595625",
+      "name": "开始启动-流程-状态_jurassic",
+      "font_class": "jurassic_start",
+      "unicode": "e6c1",
+      "unicode_decimal": 59073
+    }
+  ]
+}

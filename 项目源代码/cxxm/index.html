@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<link rel="stylesheet" type="text/css" href="css/reset.css" />
+		<link rel="stylesheet" type="text/css" href="iconfont/iconfont.css" />
+		<link rel="stylesheet" type="text/css" href="css/ol.css" />
+		<script src="js/ol.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/jquery-3.4.1.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/turf.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/echarts.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/coordtransform.js" type="text/javascript" charset="utf-8"></script>
+		<title>河流污染物动态监测预警系统</title>
+		<style type="text/css">
+			a {
+				text-decoration: none;
+			}
+			
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				position: relative;
+			}
+			
+			#map {
+				height: 100%;
+				position: relative;
+				background-color: #BBFFAA;
+			}
+			
+			#layers {
+				position: absolute;
+				z-index: 9999;
+				background-color: rgba(255, 255, 255, 0.8);
+				box-shadow: 0px 0px 3px black;
+				top: 150px;
+				right: 50px;
+				border-radius: 5px;
+			}
+			
+			#layers>li {
+				line-height: 25px;
+				color: cornflowerblue;
+				font-family: "微软雅黑";
+				padding-right: 10px;
+			}
+			
+			#menu {
+				position: absolute;
+				top: 10px;
+				left: 70px;
+				background-color: rgba(255, 255, 255, 0.8);
+				width: 300px;
+				height: 300px;
+				border-radius: 10px;
+				box-shadow: 0px 0px 10px black;
+				overflow: hidden;
+				margin-top: 10px;
+				transition: height 0.5s;
+			}
+			
+			#displaymenu::after {
+				content: '';
+				display: table;
+				clear: both;
+			}
+			
+			#displaymenu>li {
+				margin-top: 10px;
+				float: left;
+				line-height: 20px;
+				font-family: "微软雅黑";
+				color: gray;
+				width: 100px;
+				box-sizing: border-box;
+				text-align: center;
+			}
+			
+			#displaymenu>li:hover {
+				cursor: pointer;
+				color: cornflowerblue;
+			}
+			
+			#displaymenu input {
+				width: 100%;
+				text-align: center;
+				color: cornflowerblue;
+				border-radius: 0px;
+			}
+			
+			#displayitem>li {
+				padding-left: 10px;
+				line-height: 40px;
+				position: relative;
+				color: gray;
+			}
+			
+			#displayitem input {
+				position: absolute;
+				right: 30px;
+				height: 20px;
+				top: 10px;
+				text-align: center;
+			}
+			
+			#analysis {
+				margin-top: 15px;
+			}
+			
+			#analysis>li {
+				float: left;
+				width: 150px;
+				text-align: center;
+			}
+			
+			#analysis>li>a {
+				color: gray;
+			}
+			
+			#analysis>li>a:hover {
+				color: cornflowerblue;
+			}
+			
+			#chartContainer {
+				position: absolute;
+				top: 340px;
+				left: 20px;
+				width: 400px;
+				height: 380px;
+				border-radius: 10px;
+				background-color: rgba(255, 255, 255, 0.8);
+				overflow: hidden;
+				transition: height 0.5s;
+			}
+			
+			#echarts {
+				height: 100%;
+			}
+			
+			.leftstop {
+				position: absolute;
+				right: 3px;
+				top: 3px;
+				font-size: 20px;
+				font-weight: bold;
+				color: cornflowerblue;
+				cursor: pointer;
+				z-index: 9999;
+			}
+			
+			.canclestop {
+				position: absolute;
+				color: cornflowerblue;
+				font-size: 30px;
+				background-color: rgba(255, 255, 255, 0.8);
+				z-index: 9999;
+				cursor: pointer;
+				width: 30px;
+				line-height: 50px;
+				border-top-right-radius: 25px;
+				border-bottom-right-radius: 25px;
+				text-align: center;
+				transition: left 0.5s;
+				box-shadow: 0px 0px 3px black;
+			}
+			
+			body>.canclestop:nth-of-type(1) {
+				left: -30px;
+				top: 10px;
+			}
+			
+			body>.canclestop:nth-of-type(2) {
+				left: -30px;
+				top: 340px;
+			}
+			/*设置地图弹窗框的相关样式*/
+			
+			#popup {
+				width: 200px;
+				background-color: rgba(255, 255, 255, 0.5);
+				border-radius: 10px;
+				margin: 30px auto;
+				position: relative;
+				box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5);
+			}
+			
+			#popup::after {
+				content: '';
+				display: block;
+				position: absolute;
+				top: 100%;
+				left: 20px;
+				width: 0px;
+				height: 0px;
+				border: 10px solid;
+				border-bottom: 0px;
+				border-left-color: transparent;
+				border-right-color: transparent;
+				border-top-color: rgba(255, 255, 255, 0.5);
+			}
+			
+			#popup>i {
+				position: absolute;
+				font-size: 12px;
+				right: 3px;
+				top: 3px
+			}
+			
+			#popup>i:hover {
+				cursor: pointer;
+				color: red;
+			}
+			
+			#popup>.content {
+				padding: 10px;
+			}
+			
+			#popup>.content>p {
+				line-height: 25px;
+				color: orange;
+			}
+			/*开始设置地图图例的样式*/
+			#legend{
+				padding: 10px 0px;
+				width: 160px;
+				box-shadow: 0px 0px 3px black;
+				margin: 30px auto;
+				border-radius: 5px;
+				position: absolute;
+				z-index: 9999;
+				right: 30px;
+				bottom: 30px;
+				background-color: rgba(255,255,255,0.8);
+			}
+			#legend>li{
+				padding-left: 10px;
+				line-height: 40px;
+				position: relative;
+			}
+			#legend>li>span{
+				width: 20px;
+				height: 20px;
+				position: absolute;
+				top:10px;
+				border-radius: 10px;
+			}
+			#legend>li>i{
+				display: inline-block;
+				width: 60px;
+			}
+			#legend>li>i:nth-of-type(1){
+				margin-left: 30px;
+				color: cornflowerblue;
+			}
+			#legend>li>i:nth-of-type(2){
+				color: black;
+			}
+			/*开始设置预警容器的样式*/
+			.analysisw{
+				width: 290px;
+				background-color: #BBFFAA;
+				margin: auto;
+				border-radius: 5px;
+				box-shadow: 0px 0px 5px black;
+				padding-bottom: 10px;
+				position: absolute;
+				z-index:9999;
+				top: 20px;
+				left: 50%;
+				margin-left: -140px;
+				background-color: rgba(255,255,255,0.8);
+				box-shadow: 0px 0px 5px black;
+				display: none;
+			}
+			.analysisw>h3{
+				text-align: center;
+				line-height: 36px;
+				font-size: 18px;
+				color: cornflowerblue;
+			}
+			
+			.analysisw>p{
+				text-align: center;
+				line-height: 40px;
+			}
+			#tablecontainer{
+				max-height:144px ;
+				overflow: auto;
+			}
+			.analysisw table{
+				border: 1px solid black;
+				font-size: 12px;
+				border-collapse: collapse;
+				margin: 0px auto;
+			}
+			.analysisw table tr{
+				line-height: 16px;
+			}
+			.analysisw table th{
+				border: 1px solid;
+				border-collapse: collapse;
+			}
+			.analysisw table td{
+				border: 1px solid black;
+				text-align: center;
+				border-collapse: collapse;
+				vertical-align:middle;
+			}
+			.analysisw table td:hover{
+				cursor: pointer;
+			}
+			.analysisw input[type='button']{
+				width: 100px;
+				margin: auto;
+				display: block;
+			}
+			.analysisw input[type='range']:hover{
+				cursor: pointer;
+			}
+			.analysisw input[type='button']:hover{
+				color: red;
+				border: 1px solid red;
+				box-shadow: 0px 0px 3px red;
+			}
+			.analysisw i{
+				position:  absolute;
+				right: 3px;
+				top: 3px;
+				font-size: 18px;
+			}
+			.analysisw i:hover{
+				cursor: pointer;
+				color: red;
+			}
+			/*开始设置预警框的样式*/
+			#warning{
+			width: 280px;
+			height: 300px;
+			margin:0px auto;
+			background-color: rgba(255,255,255,0.8);
+			border-radius: 5px;
+			box-shadow: 0px 0px 5px black;
+			position: absolute;
+			z-index: 9999;
+			top: 20px;
+			left: 50%;
+			margin-left:-140px ;
+			display: none;
+		}
+		#warning>i{
+			position: absolute;
+			top:3px;
+			right: 3px;
+			font-size: 18px;
+			font-weight: bold;
+		}
+		#warning>i:hover{
+			cursor: pointer;
+			color: red;
+		}
+		#warning>h3{
+			line-height: 30px;
+			text-align: center;
+			font-size: 18px;
+			font-family: "微软雅黑";
+			color: cornflowerblue;
+			padding-top: 3px;
+		}
+		#warning>p{
+			padding-left: 20px;
+			margin-bottom: 10px;
+		}
+		#warning select{
+			width: 120px;
+		}
+		#warning textarea{
+			margin-top: 5px;
+			width: 230px;
+			height: 110px;
+			font-size: 16px;
+		}
+		#warning input[type='button']{
+			width: 60px;
+			margin-left: 90px;
+		}
+		#warning input[type='button']:hover{
+			color: red;
+			box-shadow: 0px 0px 2px red;
+			border: red;
+		}
+		</style>
+	</head>
+	<body>
+		<!--地图容器-->
+		<div id="map">
+			<ul id="layers">
+				<li><input type="radio" id="imgLayer" value="天地图底图" checked="true" /><label>天地图底图</label></li>
+				<li><input type="radio" id="markerLayer" value="天地图注记" checked="true"><label>天地图注记</label></li>
+				<li><input type="radio" id="satelliteLayer" value="天地图影像" checked="true" /><label>天地图影像</label></li>
+			</ul>
+			<div id="popup">
+				<i class="iconfont" title="关闭">&#xe6c9;</i>
+				<div class="content"></div>
+			</div>
+			<!--设置地图图例-->
+			<ul id="legend">
+				<li><span style="background-color: red;"></span><i><6.0</i><i>差</i></li>
+				<li><span style="background-color: orange;"></span><i>6.0-6.5</i><i>一般</i></li>
+				<li><span style="background-color: greenyellow;"></span><i>6.5-7.0</i><i>较好</i></li>
+				<li><span style="background-color: green;"></span><i>7.0-8.0</i><i>优良</i></li>
+				<li><span style="background-color: darkseagreen;"></span><i>8.0-8.5</i><i>较好</i></li>
+				<li><span style="background-color: deepskyblue;"></span><i>8.5-9.0</i><i>一般</i></li>
+				<li><span style="background-color: blue;"></span><i>>9.0</i><i>差</i></li>
+			</ul>
+		</div>
+		<!--菜单容器-->
+		<i class="iconfont canclestop" title="取消停靠">&#xe621;</i>
+		<div id="menu">
+			<i class="iconfont leftstop" title="左侧停靠">&#xe6b6;</i>
+			<ul id="displaymenu">
+				<li><i class="iconfont">&#xe6c1;</i>开始接收</li>
+				<li><input type="text" id="dtime" placeholder="时间间隔(s)" /></li>
+				<li><i class="iconfont">&#xe611;</i>重置</li>
+			</ul>
+			<hr color="cornflowerblue" />
+			<ul id="displayitem">
+				<li>
+					<lable>开始时刻:</lable><input type="text" id="startdate" placeholder="y-m-d h:m:s" /></li>
+				<li>
+					<lable>当前时刻:</lable><input type="text" id="currentdate" placeholder="y-m-d h:m:s" /></li>
+				<li>
+					<lable>路线长度:</lable><input type="text" id="routineLength" placeholder="0米" /></li>
+				<li>
+					<lable>GPS点数:</lable><input type="text" id="gpsnum" placeholder="0个" /></li>
+				<li>
+					<lable>PH样本数:</lable><input type="text" id="phnum" placeholder="0个" /></li>
+			</ul>
+			<hr color="cornflowerblue" />
+			<ul id="analysis">
+				<li>
+					<a href="JavaScript:;"><i class="iconfont">&#xe668;</i>污染源分析</a>
+				</li>
+				<li>
+					<a href="JavaScript:;"><i class="iconfont">&#xe634;</i>预警</a>
+				</li>
+			</ul>
+		</div>
+		<!--图表容器-->
+		<i class="iconfont canclestop" title="取消停靠">&#xe621;</i>
+		<div id="chartContainer">
+			<i class="iconfont leftstop" title="左侧停靠">&#xe6b6;</i>
+			<div id="echarts">
+			</div>
+		</div>
+		<!--预警容器-->
+		<div class="analysisw">
+			<!--关闭按钮-->
+			<i class="iconfont" title="关闭">&#xe6c9;</i>
+			<h3>污染源分析</h3>
+			<hr />
+			<p>
+				<span>污染类型:</span>
+				<input type="radio" id="acidic" value="酸性污染" name="pollute-type"/><label for="acidic">酸性污染</label>
+				<input type="radio" id="alkalic" value="碱性污染" name="pollute-type"/><label for="alkalic">碱性污染</label>
+			</p>
+			<p>
+				<span >污染源:</span>
+				<input type="checkbox" id="Industry" value="超市" /><label for="Industry">工业</label>
+				<input type="checkbox" id="Agriculture" value="小区" /><label for="Agriculture">农业</label>
+				<input type="checkbox" id="life" value="学校" /><label for="life">生活</label>
+			</p>
+			<p>
+				<span>搜索半径:</span>
+				<input type="range" name="radius" value="0" min="0" max="20"/><label>0千米</label>
+			</p>
+			<hr />	
+			<div id="tablecontainer">
+				<table>	
+					<tbody>
+					<tr><th style="width: 70px;">地点</th><th style="width: 50px;">类型</th><th style="width: 120px;">地址</th></tr>
+					</tbody>
+				</table>
+			</div>
+			<hr />
+			<input type="button"  value="开始分析" />
+		</div>
+		<div id="warning">
+			<i class="iconfont" title="关闭">&#xe6c9;</i>
+			<h3>预警信息发送</h3>
+			<hr />
+			<p>
+			<span>预警等级:</span>	
+			<select name="warning-rank">
+				<option value="一级预警"><span>一级预警</span></option>
+				<option value="二级预警"><span>二级预警</span></option>
+				<option value="三级预警"><span>三级预警</span></option>
+			</select>
+			</p>
+			<p><span>预警范围:</span><input type="range" value="0" min="0" max="3" /><label>0千米</label></p>
+			<p>
+				<span>预警信息:</span>
+				<br />
+				<textarea rows="" cols=""></textarea>
+			</p>
+			<hr />
+			<p><input type="button" value="发送" /></p>
+		</div>
+	</body>
+	<!--地图加载及其相关操作-->
+	<script type="text/javascript">
+		var sourceSatellite = new ol.source.XYZ({
+			url: "http://t4.tianditu.com/DataServer?T=img_w&tk=d5545c6387d8b6c7fc0c3833b6fd6d79&x={x}&y={y}&l={z}"
+		});
+		var satelliteLayer = new ol.layer.Tile({
+			source: sourceSatellite,
+			name: "天地图影像"
+		});
+		var sourceImg = new ol.source.XYZ({
+			url: "http://t4.tianditu.com/DataServer?T=vec_w&tk=d5545c6387d8b6c7fc0c3833b6fd6d79&x={x}&y={y}&l={z}"
+		});
+		var imgLayer = new ol.layer.Tile({
+			source: sourceImg,
+			name: "天地图底图"
+		});
+		var sourceMarker = new ol.source.XYZ({
+			url: "http://t4.tianditu.com/DataServer?T=cva_w&tk=d5545c6387d8b6c7fc0c3833b6fd6d79&x={x}&y={y}&l={z}"
+		});
+		var markerLayer = new ol.layer.Tile({
+			source: sourceMarker,
+			name: "天地图注记"
+		});
+		var map = new ol.Map({
+			layers: [imgLayer, satelliteLayer, markerLayer],
+			view: new ol.View({
+				center: [13525204.220283, 3670556.3942136],
+				projection: 'EPSG:3857',
+				zoom: 18
+			}),
+			target: 'map'
+		});
+		//添加地图弹出层
+		var popupBox = document.getElementById("popup");
+		var popupLayer = new ol.Overlay({
+			element: popupBox,
+			autoPan: true,
+			autoPanAnimation: {
+				duration: 200
+			},
+			positioning: 'bottom-left'
+		});
+		map.addOverlay(popupLayer);
+		//绑定关闭弹出层事件
+		var popupClose = popupBox.getElementsByTagName("i")[0];
+		popupClose.onclick = function() {
+			popupLayer.setPosition(undefined);
+			this.blur();
+			return false;
+		}
+		//为地图绑定弹出层响应函数
+		map.on('singleclick', function(event) {
+			popupClose.onclick();
+			var clickFeature = map.forEachFeatureAtPixel(event.pixel, function(feature) {
+				return feature;
+			});
+			if(clickFeature) {
+				showPopuobox(clickFeature);
+			}
+		})
+
+		function showPopuobox(clickFeature) {
+			if(!clickFeature.get('name')){
+				var popdate = clickFeature.get('date');
+				var x = clickFeature.get('x');
+				var y = clickFeature.get('y');
+				var ph = clickFeature.get('ph');
+				var xy = new Array();
+				xy[0] = x;
+				xy[1] = y;
+				var bl = new Array();
+				bl = ol.proj.transform(xy, 'EPSG:3857', 'EPSG:4326');
+				var popupDate = document.createElement("p");
+				popupDate.innerText = TimeFormat(popdate);
+				var popupx = document.createElement("p");
+				popupx.innerText = "经度：" + bl[0].toFixed(4);
+				var popupy = document.createElement("p");
+				popupy.innerText = "纬度：" + bl[1].toFixed(4);
+				var popupContent = popupBox.getElementsByClassName("content")[0];
+				popupContent.innerHTML = "";
+				popupContent.appendChild(popupDate);
+				popupContent.appendChild(popupx);
+				popupContent.appendChild(popupy);
+				if(ph) {
+					var popupPH = document.createElement("p");
+					popupPH.innerText = "监测点PH:" + ph;
+					popupContent.appendChild(popupPH);
+				}
+			}else{
+				//单击的元素为poi元素
+				var poiname=clickFeature.get('name');
+				var poiaddress=clickFeature.get('address');
+				var poilon=clickFeature.get('lon');
+				var poilat=clickFeature.get('lat');
+				var poiCoord=coordtransform.bd09togcj02(poilon,poilat);
+				poiCoord=coordtransform.gcj02towgs84(poiCoord[0],poiCoord[1]);
+				var pname=document.createElement("p");
+				pname.innerText="地名:"+poiname;
+				var plon=document.createElement("p");
+				plon.innerText="经度:"+poiCoord[0].toFixed(5);
+				var plat=document.createElement("p");
+				plat.innerText="纬度:"+poiCoord[1].toFixed(5);
+				var paddress=document.createElement("p");
+				paddress.innerText="地址:"+poiaddress;
+				var popupContent = popupBox.getElementsByClassName("content")[0];
+				popupContent.innerHTML = "";
+				popupContent.appendChild(pname);
+				popupContent.appendChild(plon);
+				popupContent.appendChild(plat);
+				popupContent.appendChild(paddress);
+			}
+			popupLayer.setPosition(clickFeature.getGeometry().getCoordinates());
+		} //底图加载完毕，开始设置图层控件响应函数
+		var layerCtrls = document.getElementById("layers");
+		var layerItems = layerCtrls.getElementsByTagName("li");
+		for(var i = 0; i < layerItems.length; i++) {
+			layerItems[i].addEventListener("click", layerCtrlsFun, false);
+		}
+
+		function layerCtrlsFun() {
+			var layerRadio = this.getElementsByTagName("input")[0];
+			var flag = layerRadio.checked;
+			layerRadio.checked = !flag;
+			//改变图层显示状态
+			var layername = layerRadio.value;
+			var allLayers = map.getLayers();
+			allLayers.forEach(function(layer) {
+				if(layer.get('name') == layername) {
+					layer.setVisible(!flag);
+				}
+			})
+		}
+		//设置缩放工具条的位置
+		var zoomBar = document.querySelector(".ol-zoom");
+		zoomBar.style.left = "auto";
+		zoomBar.style.right = "85px";
+		zoomBar.style.top = "50px";
+	</script>
+	<!--左侧菜单栏相关操作-->
+	<script type="text/javascript">
+		var displayItem = document.getElementById("displayitem");
+		var itemInputs = displayItem.getElementsByTagName("input");
+		for(var i = 0; i < itemInputs.length; i++) {
+			itemInputs[i].disabled = true;
+		}
+		//菜单和图表容器左侧停靠
+		var minBts = document.querySelectorAll("i[title='左侧停靠']");
+		for(var i = 0; i < minBts.length; i++) {
+			minBts[i].index = i;
+			minBts[i].onclick = function() {
+				this.parentElement.style.height = "0px";
+				document.getElementsByClassName("canclestop")[this.index].style.left = "0px";
+			}
+		}
+		var cancleBts = document.getElementsByClassName("canclestop");
+		for(var i = 0; i < cancleBts.length; i++) {
+			cancleBts[i].index = i;
+			cancleBts[i].onclick = function() {
+				if(this.index == 0) {
+					document.getElementById("menu").style.height = "300px";
+				} else {
+					document.getElementById("chartContainer").style.height = "380px";
+				}
+				this.style.left = "-30px";
+			}
+		}
+	</script>
+	<!--重点gps和ph数据读取以及可视化操作-->
+	<script type="text/javascript">
+		var displayMenu = document.getElementById("displaymenu");
+		var dataBt = displayMenu.getElementsByTagName("li")[0];
+		//获取读取数据的时间间隔,缺省设置为15秒
+		var dateIntervla;
+		var dataReset = displayMenu.getElementsByTagName("li")[2];
+		var dateStart = 0;
+		//捕捉相关的控件
+		var startInput = document.getElementById("startdate");
+		var currentInput = document.getElementById("currentdate");
+		var lengthInput = document.getElementById("routineLength");
+		var gpsInput = document.getElementById("gpsnum");
+		var phInput = document.getElementById("phnum")
+		var totalgps = 0;
+		var totalph = 0;
+		var currentDate, routineLength = 0;
+		var dateEnd;
+		var timer;
+		var allphPoints = new Array();
+		var gpsSource, phSource;
+		var gpsLayer, phLayer;
+		dataBt.onclick = function() {
+			if(this.innerText.match("开始接收")) {
+				//获取数据开始时间
+				$.ajax({
+					type: "post",
+					url: "php/sendStartDate.php",
+					async: false,
+					dataType: 'json',
+					data: {},
+					success: function(data) {
+						if(data.result) {
+							dateStart = data.detail;
+							startInput.value = TimeFormat(dateStart);
+						} else {
+							alert("数据接收失败!\n" + data.detail);
+						}
+					},
+					error: function() {
+						alert("数据接收失败，请稍后再试！");
+					}
+				});
+				if(dateStart != 0) {
+					//更改菜单图标和选项
+					this.innerHTML = "<i class='iconfont'>&#xe69d;</i>暂停接收";
+					//向地图中添加gps点和ph点两个图层
+					gpsSource = new ol.source.Vector({
+						features: []
+					});
+					phSource = new ol.source.Vector({
+						features: []
+					});
+					gpsLayer = new ol.layer.Vector({
+						source: gpsSource,
+						visible: false,
+						style: new ol.style.Style({
+							image: new ol.style.Circle({
+								radius: 2,
+								fill: new ol.style.Fill({
+									color: "#BBFFAA"
+								})
+							})
+						}),
+						name: "定位采样点"
+					})
+					phLayer = new ol.layer.Vector({
+						source: phSource,
+						visible: true,
+						name: "PH采样点"
+					})
+					map.addLayer(phLayer);
+					map.addLayer(gpsLayer);
+					//图层控件增加两个图层
+					var gpsLayerctrl = document.createElement("li");
+					gpsLayerctrl.innerHTML = '<input type="radio" id="gpsLayer" value="定位采样点"  /><label>定位采样点</label>';
+					var phLayerctrl = document.createElement("li");
+					phLayerctrl.innerHTML = '<input type="radio" id="phLayer" value="PH采样点" checked="checked" /><label>PH采样点</label>';
+					var layerItemsHr = document.createElement("li");
+					layerItemsHr.innerHTML = '<hr color="black" />';
+					layerItemsHr.style.padding = "0px";
+					layerCtrls.appendChild(layerItemsHr);
+					layerCtrls.appendChild(gpsLayerctrl);
+					layerCtrls.appendChild(phLayerctrl);
+					gpsLayerctrl.addEventListener('click', layerCtrlsFun, false);
+					phLayerctrl.addEventListener('click', layerCtrlsFun, false);
+					//初始时间请求成功，以设置好的时间间隔，每隔一定的时间（1s）向服务器请求一次数据
+					dateIntervla = document.getElementById("dtime").value;
+					if(dateIntervla <= 0) {
+						dateIntervla = 60;
+					}
+					dateStart--;
+					dateEnd = dateStart + dateIntervla * 1000; //单位由s化为ms
+					timer = setInterval(intervalFun, 1000);
+				}
+			} else if(this.innerText.match("暂停接收")) {
+				//更改菜单图标和选项
+				this.innerHTML = "<i class='iconfont'>&#xe6c1;</i>继续接收";
+				clearInterval(timer);
+			} else {
+				timer = setInterval(intervalFun, 1500);
+				this.innerHTML = "<i class='iconfont'>&#xe69d;</i>暂停接收";
+			}
+		}
+		//重置按钮操作：清除所有已经接收到的数据并重置页面到初始状态
+		dataReset.onclick = function() {
+			var flag = confirm("确定要清除所有已经获取的数据并重置页面到初始状态吗？");
+			if(flag) {
+				window.location.reload();
+			}
+		}
+		//对时间戳进行解析，转换为需要的格式
+		function TimeFormat(timeStamp) {
+			var datetime = new Date(timeStamp);
+			var y = datetime.getFullYear();
+			var mo = datetime.getMonth() + 1;
+			var d = datetime.getDate();
+			var h = datetime.getHours();
+			h = h < 10 ? ('0' + h) : h;
+			var mi = datetime.getMinutes();
+			mi = mi < 10 ? ('0' + mi) : mi;
+			var s = datetime.getSeconds();
+			s = s < 10 ? ('0' + s) : s;
+			var datestring = "";
+			datestring = y + "-" + mo + "-" + d + " " + h + ":" + mi + ":" + s;
+			return datestring;
+		}
+		//给定开始时间和结束时间，向服务器请求数据，返回GPS点数据和ph点数据
+		function getDataPoints(dateStart, dateEnd) {
+			var result;
+			$.ajax({
+				type: "post",
+				url: "php/sendPoints.php",
+				async: false,
+				dateType: 'json',
+				data: {
+					start: dateStart,
+					end: dateEnd
+				},
+				success: function(data) {
+					if(data.result) {
+						//数据请求成功,返回数据
+						result = data;
+					} else {
+						result = false;
+					}
+				},
+				error: function(errmsg) {
+					result = false;
+				}
+			});
+			return result;
+		}
+		//定时器取点函数
+		var intervalFun = function() {
+			var data = getDataPoints(dateStart, dateEnd);
+			//						console.log(JSON.stringify(data));
+			if(!data) {
+				//数据返回失败
+				clearInterval(timer);
+				alert("服务器数据返回失败！");
+			} else {
+				var gpsPoints = data.gpsPoints;
+				var phPoints = data.phPoints;
+				var gpsnum = gpsPoints.length;
+				var phnum = phPoints.length;
+				if(gpsnum == 0 && phnum == 0) {
+					alert("服务器已返回所有数据！");
+					clearInterval(timer);
+				} else {
+					//服务器返回了gps或ps数据
+					totalgps = totalgps + gpsnum;
+					totalph = totalph + phnum;
+					gpsInput.value = totalgps + "个";
+					phInput.value = totalph + "个";
+					currentDate = Math.max(gpsPoints[gpsnum - 1].date, phPoints[phnum - 1].date);
+					currentInput.value = TimeFormat(currentDate);
+					//计算当前路线的长度
+					var routinePoints = new Array();
+					for(var i = 0; i < gpsPoints.length; i++) {
+						var xy = new Array();
+						xy.push(gpsPoints[i].X);
+						xy.push(gpsPoints[i].Y);
+						var bl = ol.proj.transform(xy, 'EPSG:3857', 'EPSG:4326');
+						routinePoints.push(bl);
+					}
+					//汇总接收到的ph点，用于绘制图表
+					for(var i = 0; i < phnum; i++) {
+						var phPoint = new Array();
+						phPoint.push((phPoints[i].date - (new Date(startInput.value)).getTime()) / 1000);
+						phPoint.push(phPoints[i].ph);
+						allphPoints.push(phPoint);
+					}
+					chartInstance.setOption({
+						series: {
+							data: allphPoints
+						}
+					})
+					var line = turf.lineString(routinePoints);
+					routineLength += turf.length(line, {
+						units: 'meters'
+					});
+					lengthInput.value = routineLength.toFixed(3) + "米";
+					//将新返回的数据添加到地图当中
+					createFeatures(phPoints, 'ph');
+					createFeatures(gpsPoints, 'gps');
+					//计算中心点，更新地图视角   
+					var center = turf.center(line).geometry.coordinates;
+					center = ol.proj.transform(center, 'EPSG:4326', 'EPSG:3857');
+					map.getView().animate({
+						center: center,
+						duration: 800
+					});
+					//更新下一次请求数据的开始时间和结束时间
+					dateStart = dateEnd;
+					dateEnd = dateEnd + dateIntervla * 1000;
+				}
+			}
+		}
+	</script>
+	<script type="text/javascript">
+		//绘制echarts图表，并实现数据的异步更新
+		var chartContainer = document.getElementById("echarts");
+		var chartInstance = echarts.init(chartContainer);
+		var option = {
+			title: {
+				text: "河流PH走势图",
+				left: 125,
+				top: 10,
+				textStyle: {
+					color: 'cornflowerblue',
+					fontFamily: '微软雅黑',
+					fontSize: 18,
+				}
+			},
+			legend: {
+				data: ['PH值'],
+				left: 10,
+				top: 15
+			},
+			grid: {
+				left: 30,
+				right: 30,
+				bottom: 40,
+				containLable: false
+			},
+			tooltip: {
+				trigger: 'axis',
+				axisPointer: {
+					type: 'cross',
+					snap: true,
+					crossStyle: {
+						width: 2
+					}
+				},
+
+				triggerOn: 'mousemove'
+			},
+			xAxis: {
+				type: 'value',
+				name: '累计采样时间(s)',
+				nameLocation: 'middle',
+				nameGap: 20,
+				nameTextStyle: {
+					fontFamily: "微软雅黑",
+					color: 'black',
+				},
+				axisLine: {
+					symbol: ['none', 'arrow']
+				}
+			},
+			yAxis: {
+				type: 'value',
+				min: function(value) {
+					return Math.floor(value.min)
+				},
+				max: function(value) {
+					return Math.floor(value.max) + 1
+				},
+				minInterval: 0.1,
+				axisLine: {
+					show: true,
+					symbol: ['none', 'arrow']
+				}
+			},
+			series: {
+				name: 'PH值',
+				type: 'line',
+				smooth: true,
+				showSymbol: true,
+				symbolSize: 2,
+				lineStyle: {
+					color: 'green',
+					opacity: 0.5
+				},
+				markPoint: {
+					data: [{
+						type: 'max',
+						itemStyle: {
+							color: 'rgba(255,0,0,0.8)'
+						}
+					}, {
+						type: 'min'
+					}]
+				},
+				markLine: {
+					data: [{
+						type: 'average',
+						name: '平均值',
+						lineStyle: {
+							color: 'orange',
+							width: 2
+						}
+					}]
+				}
+			}
+		}
+		chartInstance.setOption(option);
+		var selectedId = -1;
+		var oldstyle;
+		var newstyle = new ol.style.Style({
+			image: new ol.style.Circle({
+				radius: 8,
+				fill: new ol.style.Fill({
+					color: "yellow"
+				})
+			})
+		});
+		//为折线图绑定事件响应函数,实现与底图数据的互相响应
+		chartInstance.on('click', 'series.line', function(params) {
+			var phFeatures = phSource.getFeatures();
+			if(selectedId != -1) {
+				for(var i=0;i<phFeatures.length;i++){
+					var id=phFeatures[i].get('id');
+					if(id==selectedId){
+						phFeatures[i].setStyle(oldstyle);
+						break;
+					}
+				}
+			}
+			selectedId=params.dataIndex+1;
+			for(var i = 0; i < phFeatures.length; i++) {
+				var id = phFeatures[i].get('id');
+				if(id == selectedId) {
+					oldstyle=phFeatures[i].getStyle();
+					phFeatures[i].setStyle(newstyle);
+					//移动地图视角
+					var center=phFeatures[i].getGeometry().getCoordinates();
+					map.getView().animate({center:center,duration:500});
+					showPopuobox(phFeatures[i]);
+					break;
+				}
+			}
+		})
+	</script>
+	<!--gp数据点和ph数据点加载相关操作-->
+	<script type="text/javascript">
+		//该函数将gps点和ph点转换为open layer中的点要素
+		function createFeatures(samplePoints, sampleType) {
+			var pointFeatures = new Array();
+			for(var i = 0; i < samplePoints.length; i++) {
+				var pfeature = new ol.Feature({
+					geometry: new ol.geom.Point([samplePoints[i].X, samplePoints[i].Y]),
+					date: samplePoints[i].date,
+					x: samplePoints[i].X,
+					y: samplePoints[i].Y,
+					ph: 0,
+					id: samplePoints[i].id
+				});
+				if(sampleType == "ph") {
+					pfeature.set('ph', samplePoints[i].ph);
+					//根据ph点的ph值设置每一个ph点的填充颜色
+					var fillcolor,ph;
+					ph=samplePoints[i].ph;
+					if(ph<6){
+						fillcolor='red';
+					}else if(ph<6.5){
+						fillcolor='orange';
+					}else if(ph<7){
+						fillcolor='greenyellow';
+					}else if(ph<8){
+						fillcolor='green';
+					} else if(ph<8.5){
+						fillcolor='darkseagreen';
+					}else if(ph<9){
+						fillcolor='deepskyblue';
+					}else{
+						fillcolor='blue';
+					}
+					var featureStyle=new ol.style.Style({
+						image:new ol.style.Circle({
+							radius:6,
+							fill:new ol.style.Fill({
+								color:fillcolor
+							}),
+							stroke:new ol.style.Stroke({
+								color:'rgba(255,255,0,0.5)',
+								width:2
+							})
+						})
+					});
+					pfeature.setStyle(featureStyle);	
+				}
+				pointFeatures.push(pfeature);
+			}
+			if(sampleType == "ph") {
+				phSource.addFeatures(pointFeatures);
+			} else {
+				gpsSource.addFeatures(pointFeatures);
+			}
+		}
+	</script>
+	<!--预警相关功能实现-->
+	<script type="text/javascript">
+		var analysisW=document.getElementsByClassName("analysisw")[0];
+		//弹出分析窗口
+		document.getElementById("analysis").getElementsByTagName("li")[0].onclick=function(){
+			if(analysisW.style.display=="block"){
+				analysisW.style.display="none";
+			}else{
+				analysisW.style.display="block";
+			}
+		}
+		var rangeInput=document.querySelector("input[type='range']");
+		rangeInput.onchange=function(){
+			var rangeValue=this.value;
+			var rangeLabel=this.parentElement.getElementsByTagName("label")[0];
+			rangeLabel.innerText=rangeValue+"千米";
+		}
+		var closeBt=analysisW.getElementsByClassName("iconfont")[0];
+		closeBt.onclick=function(){
+			analysisW.style.display="none";
+			//在隐藏窗口的同时要重置表单
+			var radios=analysisW.querySelectorAll("input[type='radio']");
+			radios.forEach(function(radio){
+				radio.checked=false;
+			});
+			var checkBts=analysisW.querySelectorAll("input[type='checkbox']");
+			checkBts.forEach(function(checkBt){
+				checkBt.checked=false;
+			});
+			rangeInput.value=0;
+			rangeInput.onchange();
+			if(poiLayer){
+				map.removeLayer(poiLayer);				
+			}
+			if(poiSource){
+				poiSource=null;				
+			}
+			if(searchCircle){				
+				phSource.removeFeature(searchCircle);
+			}
+			//清空搜索记录
+			var searchTbody=analysisW.querySelector("tbody");
+			searchTbody.innerHTML='<tr><th style="width: 70px;">地点</th><th style="width: 50px;">类型</th><th style="width: 120px;">地址</th></tr>';
+		}
+		var poiSource;
+		var poiLayer;
+		var searchCircle;
+		//污染源分析函数实现
+		var analysisBt=analysisW.querySelector("input[type='button']");
+		analysisBt.onclick=function(){
+			poiSource=new ol.source.Vector({
+				features:[]
+			});
+			var polluteType;
+			var radios=analysisW.querySelectorAll("input[type='radio']");
+			if(radios[0].checked){
+				polluteType="酸性污染";
+			}else if(radios[1].checked){
+				polluteType="碱性污染";
+			}else{
+				alert("请选择污染类型!");
+				return;
+			}
+			//获取搜索参数	
+			var polluteSources=new Array();
+			var checkBts=analysisW.querySelectorAll("input[type='checkbox']");
+			checkBts.forEach(function(checkBt){
+				if(checkBt.checked){
+					polluteSources.push(checkBt.value);
+				}
+			});
+			if(!polluteSources.length){
+				alert("请选择可能的污染源头!");
+				return;
+			}
+			var searchRadius=rangeInput.value;
+			if(!searchRadius){
+				alert("请设置搜索半径!");
+				return;
+			}
+			//根据污染类型选中PH值最高或最低的点
+			var phFeatures=phSource.getFeatures();
+			var phMinFeature=null,phMaxFeature=null;
+			phFeatures.forEach(function(pfeature){
+				 if(!phMaxFeature){
+				 	phMaxFeature=pfeature;
+				 }else{
+				 	var phmax=phMaxFeature.get('ph');
+				 	var ph=pfeature.get('ph');
+				 	phMaxFeature=phmax<ph?pfeature:phMaxFeature;
+				 }
+				 if(!phMinFeature){
+				 	phMinFeature=pfeature;
+				 }else{
+				 	var ph=pfeature.get('ph');
+				 	var phmin=phMinFeature.get('ph');
+				 	phMinFeature=phmin>ph?pfeature:phMinFeature;
+				 }
+			});
+			phMinFeature.getStyle().setImage(new ol.style.Icon({
+				anchor:[0.5,0.5],
+				src:'img/red.png',
+				scale:0.05
+			}));
+			phMaxFeature.getStyle().setImage(new ol.style.Icon({
+				anchor:[0.5,0.5],
+				src:'img/blue.png',
+				scale:0.05
+			}));
+			//根据污染类型选中PH值最高或最低的点
+			var phFeatures=phSource.getFeatures();
+			var phMinFeature=null,phMaxFeature=null;
+			phFeatures.forEach(function(pfeature){
+				 if(!phMaxFeature){
+				 	phMaxFeature=pfeature;
+				 }else{
+				 	var phmax=phMaxFeature.get('ph');
+				 	var ph=pfeature.get('ph');
+				 	phMaxFeature=phmax<ph?pfeature:phMaxFeature;
+				 }
+				 if(!phMinFeature){
+				 	phMinFeature=pfeature;
+				 }else{
+				 	var ph=pfeature.get('ph');
+				 	var phmin=phMinFeature.get('ph');
+				 	phMinFeature=phmin>ph?pfeature:phMinFeature;
+				 }
+			});
+			phMinFeature.getStyle().setImage(new ol.style.Icon({
+				anchor:[0.5,0.5],
+				src:'img/red.png',
+				scale:0.05
+			}));
+			phMaxFeature.getStyle().setImage(new ol.style.Icon({
+				anchor:[0.5,0.5],
+				src:'img/blue.png',
+				scale:0.05
+			}));
+			var polluteType="酸性污染";
+			var searchCenter;
+			if(polluteType=="酸性污染"){
+				searchCenter=phMinFeature.getGeometry().getCoordinates();
+			}else{
+				searchCenter=phMaxFeature.getGeometry().getCoordinates();
+			}
+			searchCenter=ol.proj.transform(searchCenter,'EPSG:3857','EPSG:4326');
+			searchCircle=turf.circle(searchCenter,searchRadius*1000,{units:"meters"});
+			searchCircle=new ol.format.GeoJSON().readFeature(searchCircle);
+			searchCircle.getGeometry().transform('EPSG:4326','EPSG:3857');
+			searchCircle.setStyle(new ol.style.Style({
+				stroke:new ol.style.Stroke({
+					color:"blue",
+					width:2
+				}),
+				fill:new ol.style.Fill({
+					color:"rgba(255,0,0,0.5)"
+				})
+			}));
+			phSource.addFeature(searchCircle);
+			//构造API查询参数
+			var pointLonLat=searchCenter.join(",");
+			pointLonLat=coordsToBD(1,5,pointLonLat)[0];
+			pointLonLat=pointLonLat[1]+","+pointLonLat[0];
+			var queryRadius=searchRadius*1000;
+			var keyWords=polluteSources;
+			keyWords.forEach(function(keyword){
+				var pois;
+				pois=PoiSearch(pointLonLat,queryRadius,keyword);
+				//将搜索到的poi添加到表格和poi数据源中
+				pois.forEach(function(poi){
+					//添加到表格中
+					var tr=document.createElement("tr");
+					var td_name=document.createElement("td");
+					td_name.innerText=poi.name;
+					//为td_name绑定鼠标单击地图定位事件
+					td_name.onclick=function(){
+						var poiname=this.innerText;
+						var features=poiSource.getFeatures();
+						for(var i=0;i<features.length;i++){
+							if(features[i].get('name')==poiname){
+								var poiCoord=features[i].getGeometry().getCoordinates();
+								map.getView().animate({
+									center: poiCoord,
+									duration: 800
+								});
+								break;
+							}
+						}
+					}
+					var td_type=document.createElement("td");
+					td_type.innerText=keyword;
+					var td_address=document.createElement("td");
+					td_address.innerText=poi.address;
+					tr.appendChild(td_name);
+					tr.appendChild(td_type);
+					tr.appendChild(td_address);
+					var tbody=analysisW.getElementsByTagName("tbody")[0];
+					tbody.appendChild(tr);
+					//添加到数据源中
+					//将百度坐标转为wgs84坐标，再转为epsg3857坐标
+					var poiCoord=new Array();
+					poiCoord=coordtransform.bd09togcj02(poi.lon,poi.lat);
+					poiCoord=coordtransform.gcj02towgs84(poiCoord[0],poiCoord[1]);
+					poiCoord=ol.proj.transform(poiCoord,'EPSG:4326','EPSG:3857');
+					var poiFeature=new ol.Feature({
+						geometry:new ol.geom.Point(poiCoord),
+						name:poi.name,
+						address:poi.address,
+						lon:poi.lon,
+						lat:poi.lat,
+					});
+					poiFeature.setStyle(new ol.style.Style({
+							image:new ol.style.Icon({
+								src:'img/green.png',
+								scale:0.1,
+								anchor:[0.5,0.5]
+							})
+						}));
+					//为该poi绑定鼠标弹出事件->已经自动绑定
+					poiSource.addFeature(poiFeature);
+				})	
+			});
+			poiLayer=new ol.layer.Vector({
+				source:poiSource,
+				layername:'poilayer'
+			});
+			map.addLayer(poiLayer);
+		}
+		//坐标转换函数
+		function coordsToBD(source,destination,oldcoords){
+			var newcoords=new Array();
+			$.ajax({
+				type:"get",
+				url:"php/CoordinateTrans.php",
+				async:false,
+				dataType:'json',
+				data:{
+					source:source,
+					destination:destination,
+					coords:oldcoords
+				},
+				success:function(data){
+					var result=data.result;
+					result.forEach(function(Item){
+						var coord=new Array();
+						coord.push(Item.x);
+						coord.push(Item.y);
+						newcoords.push(coord);
+					});
+				},
+				error:function(){
+					newcoords=null;
+				}
+			});
+			return newcoords;
+		}
+		//百度POI搜索接口调用
+		function PoiSearch(pointLonLat,radius,keyword){
+			var pois=new Array();
+			$.ajax({
+				type:"get",
+				url:"php/searchPoi.php",
+				async:false,
+				dataType:'json',
+				data:{
+					pointLonLat:pointLonLat,
+					radius:radius,
+					keyword:keyword
+				},
+				success:function(data){
+					data.forEach(function(item){
+						var poi=new Object();
+						poi.name=item.name;
+						poi.lon=item.lon;
+						poi.lat=item.lat;
+						poi.address=item.address;
+						pois.push(poi);
+					})
+				},
+				error:function(){
+					pois=null;
+				}
+			});
+			return pois;
+		}
+	</script>
+	<!--预警相关功能实现-->
+	<script type="text/javascript">
+		var bufferSource=new ol.source.Vector({
+			features:[]
+		});
+		var bufferLayer=new ol.layer.Vector({
+			source:bufferSource
+		});
+		map.addLayer(bufferLayer);
+		var warningW=document.getElementById("warning");
+		document.getElementById("analysis").getElementsByTagName("li")[1].onclick=function(){
+			if(warningW.style.display=="none"){
+				warningW.style.display="block";
+			}else{
+				warningW.style.display="none";
+			}
+		}
+		//预警功能相关事件编写
+		var mindist=0;
+		var maxdist1=0,maxdist2=0,maxdist3=0;
+		var closeWBt=warningW.getElementsByTagName("i")[0];
+		var warningText=warningW.getElementsByTagName("textarea")[0];
+		var warningRange=warningW.querySelector("input[type='range']");
+		var warningRank=warningW.getElementsByTagName("select")[0];
+		closeWBt.onclick=function(){
+			warningW.style.display="none";
+			warningText.value="";
+			warningRange.value=0;
+			warningRange.onchange();
+			warningRank.selectedIndex=0;
+		}
+		warningRange.onchange=function(){
+			var rangeLabel=warningW.getElementsByTagName("label")[0];
+			rangeLabel.innerText=this.value+"千米";
+			if(warningRank.selectedIndex==0){
+				maxdist1=warningRange.value;
+			}else if(warningRank.selectedIndex==1){
+				maxdist2=warningRange.value;
+			}else{
+				maxdist3=warningRange.value;
+			}
+		}
+		warningRank.onchange=function(){
+			warningText.value="";
+			if(this.selectedIndex==0){
+				warningRange.min=0;
+				warningRange.max=3;
+			}else if(this.selectedIndex==1){
+				warningRange.min=maxdist1;
+				warningRange.max=5;
+			}else{
+				warningRange.min=Math.max(maxdist1,maxdist2);
+				warningRange.max=10;
+			}
+			warningRange.value=warningRange.min;
+			warningRange.onchange();
+		}
+		var warningBt=warningW.querySelector('input[type="button"]');
+		warningBt.onclick=function(){
+			var rank=warningRank.value;
+			var mindist,maxdist;
+			mindist=warningRange.min*1000;
+			if(!mindist){
+				mindist=1;
+			}
+			maxdist=warningRange.value*1000;
+			var warningtext=warningText.value;
+			var flag=Warning(rank,mindist,maxdist,warningtext);
+			if(flag){
+				alert("预警信息发送成功！");
+			}else{
+				alert("预警信息发送失败！");
+			}
+		}
+		//开始编写预警函数
+		function Warning(rank,mindist,maxdist,warningtext){
+			var result;
+			var phfeatures=new Array();
+			phSource.getFeatures().forEach(function(feature){
+				var ph=feature.get('ph');
+				if(ph<6 ||ph>9){
+					phfeatures.push(feature);
+				}
+			});
+			//对污染点进行排序
+			for(var i=0;i<phfeatures.length-1;i++){
+				for(j=0;j<phfeatures.length-1-i;j++){
+					var id1=phfeatures[j].get('id');
+					var id2=phfeatures[j+1].get('id');
+					if(id1>id2){
+						var t=phfeatures[j];
+						phfeatures[j]=phfeatures[j+1];
+						phfeatures[j+1]=t;
+					}
+				}
+			}
+			var phcoords=new Array();
+			phfeatures.forEach(function(feature){				
+				var phcoord=feature.getGeometry().getCoordinates();
+				phcoord=ol.proj.transform(phcoord,'EPSG:3857','EPSG:4326');
+				phcoords.push(phcoord);
+			});
+			var phLinestring=turf.lineString(phcoords);
+			//生成污染缓冲区
+			var phBuffer1=turf.buffer(phLinestring,mindist,{units:'meters'});
+			var phBuffer2=turf.buffer(phLinestring,maxdist,{units:'meters'});
+			var Buffer=turf.difference(phBuffer2,phBuffer1);
+			var GJreader=new ol.format.GeoJSON();
+			var phBuffer=GJreader.readFeature(Buffer);
+			//坐标转换
+			phBuffer.getGeometry().transform('EPSG:4326','EPSG:3857');
+			bufferSource.addFeature(phBuffer);
+			//设置样式
+			var bufferStyle;
+			if(rank=="一级预警"){
+				bufferStyle=new ol.style.Style({
+					stroke:new ol.style.Stroke({
+						width:2,
+						color:'rgb(255,255,255)'
+					}),
+					fill:new ol.style.Fill({
+						color:'rgba(255,0,0,0.5)'
+					})
+				})
+			}else if(rank=="二级预警"){
+				bufferStyle=new ol.style.Style({
+					stroke:new ol.style.Stroke({
+						width:2,
+						color:'rgb(255,255,255)'
+					}),
+					fill:new ol.style.Fill({
+						color:'rgba(255,165,0,0.5)'
+					})
+				})
+			}else{
+				bufferStyle=new ol.style.Style({
+					stroke:new ol.style.Stroke({
+						width:2,
+						color:'rgb(255,255,255)'
+					}),
+					fill:new ol.style.Fill({
+						color:'rgba(255,255,0,0.5)'
+					})
+				})
+			}
+			phBuffer.setStyle(bufferStyle);
+			//内部点判断
+			$.ajax({
+				type:"get",
+				url:"php/warning_1.php",
+				async:false,
+				dataType:'json',
+				data:{},
+				success:function(data){
+					if(!data){
+						result=false;
+						return;
+					}else{
+						var flags=Array();
+						data.forEach(function(item){
+							var flag=new Object();
+							flag.id=item.id;
+							var coord=coordtransform.bd09togcj02(item.coord[0],item.coord[1]);
+							coord=coordtransform.gcj02towgs84(coord[0],coord[1]);
+							var point=turf.point(coord);
+							flag.within=turf.booleanWithin(point,Buffer);
+							if(flag.within){								
+								flags.push(flag);
+							}
+						});
+						if(flags.length==0){
+							result=true;
+							return;
+						}
+						$.ajax({
+							type:"post",
+							url:"php/warning_2.php",
+							async:false,
+							dataType:'json',
+							data:{
+								flags:flags,
+								text:warningtext,
+								rank:rank
+							},
+							success:function(data){
+								if(data){
+									result=true;
+								}else{
+									result=true;
+								}
+							},
+							error:function(){
+								result=false;
+							}
+						});
+					}
+				},
+				error:function(){
+					result=false;
+				}
+			});
+			return result;
+		}
+	</script>
+</html>
